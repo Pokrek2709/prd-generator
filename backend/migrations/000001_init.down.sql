@@ -1,0 +1,6 @@
+DROP TABLE IF EXISTS ai_usage_logs;
+DROP TABLE IF EXISTS prd_versions;
+DROP TABLE IF EXISTS prds;
+DROP TABLE IF EXISTS projects;
+DROP TABLE IF EXISTS refresh_tokens;
+DROP TABLE IF EXISTS users;

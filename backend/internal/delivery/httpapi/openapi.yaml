@@ -1,0 +1,275 @@
+openapi: 3.0.3
+info:
+  title: AI PRD Generator API
+  version: 1.0.0
+  description: REST API for account, project, PRD, AI generation, usage, export, and share links.
+servers:
+  - url: /api/v1
+security:
+  - cookieAuth: []
+paths:
+  /auth/register:
+    post:
+      security: []
+      summary: Register an account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RegisterRequest' }
+      responses: { '201': { description: Registered }, '400': { $ref: '#/components/responses/Error' }, '409': { $ref: '#/components/responses/Error' } }
+  /auth/login:
+    post:
+      security: []
+      summary: Log in and set HttpOnly session cookies
+      responses: { '200': { description: Logged in }, '401': { $ref: '#/components/responses/Error' } }
+  /auth/refresh:
+    post:
+      security: []
+      summary: Rotate refresh and access cookies
+      responses: { '200': { description: Session refreshed }, '401': { $ref: '#/components/responses/Error' } }
+  /auth/logout:
+    post:
+      security: []
+      summary: Revoke the refresh session
+      responses: { '204': { description: Logged out } }
+  /auth/me:
+    get:
+      summary: Get current user
+      responses: { '200': { description: Current user }, '401': { $ref: '#/components/responses/Error' } }
+  /projects:
+    get:
+      summary: Search and paginate projects
+      parameters:
+        - { in: query, name: q, schema: { type: string } }
+        - { in: query, name: status, schema: { type: string, enum: [active, archived] } }
+        - { in: query, name: dateFrom, schema: { type: string, format: date } }
+        - { in: query, name: dateTo, schema: { type: string, format: date } }
+        - { in: query, name: sort, schema: { type: string, enum: [updated_desc, updated_asc, created_asc, created_desc, name_asc, name_desc] } }
+        - { in: query, name: page, schema: { type: integer, minimum: 1 } }
+        - { in: query, name: limit, schema: { type: integer, minimum: 1, maximum: 100 } }
+      responses: { '200': { description: Project page } }
+    post:
+      summary: Create a project
+      responses: { '201': { description: Created } }
+  /dashboard:
+    get:
+      summary: Project and PRD dashboard summary
+      responses: { '200': { description: Counts, drafts, and latest documents } }
+  /projects/{projectId}:
+    get:
+      summary: Get a project
+      parameters: [{ $ref: '#/components/parameters/projectId' }]
+      responses: { '200': { description: Project } }
+    patch:
+      summary: Update a project
+      parameters: [{ $ref: '#/components/parameters/projectId' }]
+      responses: { '200': { description: Updated project } }
+    delete:
+      summary: Delete a project and its documents
+      parameters: [{ $ref: '#/components/parameters/projectId' }]
+      responses: { '204': { description: Deleted } }
+  /projects/{projectId}/archive:
+    post:
+      summary: Archive a project
+      parameters: [{ $ref: '#/components/parameters/projectId' }]
+      responses: { '204': { description: Archived } }
+  /projects/{projectId}/duplicate:
+    post:
+      summary: Duplicate a project and its PRDs
+      parameters: [{ $ref: '#/components/parameters/projectId' }]
+      responses: { '201': { description: Project copy } }
+  /projects/{projectId}/prds:
+    get:
+      summary: List PRDs in a project
+      parameters: [{ $ref: '#/components/parameters/projectId' }]
+      responses: { '200': { description: PRD page } }
+    post:
+      summary: Create a PRD draft
+      parameters: [{ $ref: '#/components/parameters/projectId' }]
+      responses: { '201': { description: Created draft } }
+  /prds/{prdId}:
+    get:
+      summary: Get a PRD
+      parameters: [{ $ref: '#/components/parameters/prdId' }]
+      responses: { '200': { description: PRD } }
+    patch:
+      summary: Update a PRD using its current version for optimistic locking
+      parameters: [{ $ref: '#/components/parameters/prdId' }]
+      responses: { '200': { description: Updated }, '409': { $ref: '#/components/responses/Error' } }
+    delete:
+      summary: Delete a PRD
+      parameters: [{ $ref: '#/components/parameters/prdId' }]
+      responses: { '204': { description: Deleted } }
+  /prds:
+    get:
+      summary: Search and filter the current user's PRDs
+      parameters:
+        - { in: query, name: q, schema: { type: string } }
+        - { in: query, name: status, schema: { type: string, enum: [draft, in_progress, completed, archived] } }
+        - { in: query, name: dateFrom, schema: { type: string, format: date } }
+        - { in: query, name: dateTo, schema: { type: string, format: date } }
+        - { in: query, name: sort, schema: { type: string, enum: [updated_desc, updated_asc, created_asc, created_desc, title_asc, title_desc] } }
+        - { in: query, name: page, schema: { type: integer, minimum: 1 } }
+        - { in: query, name: limit, schema: { type: integer, minimum: 1, maximum: 100 } }
+      responses: { '200': { description: PRD page } }
+  /prds/{prdId}/versions:
+    get:
+      summary: List prior versions for restore or comparison
+      parameters: [{ $ref: '#/components/parameters/prdId' }]
+      responses: { '200': { description: Version history } }
+  /prds/{prdId}/restore/{versionId}:
+    post:
+      summary: Restore a saved PRD version, creating a new version
+      parameters:
+        - { $ref: '#/components/parameters/prdId' }
+        - { in: path, name: versionId, required: true, schema: { type: string, format: uuid } }
+      responses: { '200': { description: Restored PRD } }
+  /prds/{prdId}/share-links:
+    get:
+      summary: List active share links
+      parameters: [{ $ref: '#/components/parameters/prdId' }]
+      responses: { '200': { description: Share links (tokens are not returned) } }
+    post:
+      summary: Create a share link expiring in up to 90 days
+      parameters: [{ $ref: '#/components/parameters/prdId' }]
+      responses: { '201': { description: Share URL and one-time token } }
+  /prds/{prdId}/share-links/{shareId}:
+    delete:
+      summary: Revoke a share link
+      parameters:
+        - { $ref: '#/components/parameters/prdId' }
+        - { in: path, name: shareId, required: true, schema: { type: string, format: uuid } }
+      responses: { '204': { description: Revoked } }
+  /prds/{prdId}/duplicate:
+    post:
+      summary: Duplicate a PRD
+      parameters: [{ $ref: '#/components/parameters/prdId' }]
+      responses: { '201': { description: PRD copy } }
+  /prds/{prdId}/export/markdown:
+    get:
+      summary: Download Markdown
+      parameters: [{ $ref: '#/components/parameters/prdId' }]
+      responses: { '200': { description: Markdown document, content: { text/markdown: { schema: { type: string } } } } }
+  /prds/{prdId}/export/pdf:
+    get:
+      summary: Download PDF
+      parameters: [{ $ref: '#/components/parameters/prdId' }]
+      responses: { '200': { description: PDF document, content: { application/pdf: { schema: { type: string, format: binary } } } } }
+  /prds/{prdId}/export/docx:
+    get:
+      summary: Download DOCX
+      parameters: [{ $ref: '#/components/parameters/prdId' }]
+      responses: { '200': { description: Word document } }
+  /prds/{prdId}/export/jira:
+    get:
+      summary: Download Jira Issues CSV
+      parameters: [{ $ref: '#/components/parameters/prdId' }]
+      responses: { '200': { description: Jira CSV document, content: { text/csv: { schema: { type: string } } } } }
+  /prds/{prdId}/export/linear:
+    get:
+      summary: Download Linear Issues CSV
+      parameters: [{ $ref: '#/components/parameters/prdId' }]
+      responses: { '200': { description: Linear CSV document, content: { text/csv: { schema: { type: string } } } } }
+  /prds/{prdId}/print:
+    get:
+      summary: Get print-friendly HTML
+      parameters: [{ $ref: '#/components/parameters/prdId' }]
+      responses: { '200': { description: HTML document } }
+  /ai/clarify:
+    post:
+      summary: Start or continue a persisted clarification interview
+      responses: { '200': { description: Questions, answers, readiness, and session ID }, '402': { $ref: '#/components/responses/Error' } }
+  /ai/generate-prd:
+    post:
+      summary: Generate and persist a PRD
+      parameters:
+        - { in: header, name: Idempotency-Key, required: false, schema: { type: string, minLength: 8, maxLength: 128 } }
+      responses: { '201': { description: Generated PRD }, '402': { $ref: '#/components/responses/Error' }, '502': { $ref: '#/components/responses/Error' } }
+  /ai/generate-prd/stream:
+    post:
+      summary: Stream PRD generation progress, chunks, and final document via SSE
+      parameters:
+        - { in: header, name: Idempotency-Key, required: false, schema: { type: string, minLength: 8, maxLength: 128 } }
+      responses:
+        '200':
+          description: Event stream (events: progress, chunk, done, error)
+          content:
+            text/event-stream:
+              schema: { type: string }
+        '402': { $ref: '#/components/responses/Error' }
+        '502': { $ref: '#/components/responses/Error' }
+  /ai/actions:
+    post:
+      summary: Run a contextual AI action on a PRD or input
+      responses: { '200': { description: AI action result }, '402': { $ref: '#/components/responses/Error' } }
+  /ai/regenerate-section:
+    post:
+      summary: Regenerate a selected PRD section without persisting over the user's current content
+      responses: { '200': { description: Proposed section content } }
+  /ai/review-prd:
+    post:
+      summary: Review PRD completeness, ambiguity, and testability
+      responses: { '200': { description: Review findings } }
+  /ai/generate-tasks:
+    post:
+      summary: Generate development tasks from a PRD
+      responses: { '200': { description: Proposed task list } }
+  /ai/providers:
+    get:
+      security: []
+      summary: List supported AI providers and their model catalogs
+      responses: { '200': { description: Supported providers and models } }
+  /settings/ai:
+    get:
+      summary: Get user AI provider and model preferences
+      responses: { '200': { description: Current AI settings } }
+    put:
+      summary: Update user AI provider, model, and credentials
+      responses: { '200': { description: Updated AI settings } }
+  /settings/ai/test:
+    post:
+      summary: Test connectivity and credentials for an AI provider and model
+      responses: { '200': { description: Test connection result }, '400': { $ref: '#/components/responses/Error' } }
+  /usage:
+    get:
+      summary: Get monthly quota and token usage
+      responses: { '200': { description: Current usage } }
+  /plans:
+    get:
+      security: []
+      summary: List configured Free and Pro quotas
+      responses: { '200': { description: Plan names and monthly AI limits; billing is not enabled } }
+  /shared/{token}:
+    get:
+      security: []
+      summary: Read a PRD through an unguessable, expiring share token
+      parameters: [{ in: path, name: token, required: true, schema: { type: string } }]
+      responses: { '200': { description: Shared PRD }, '404': { $ref: '#/components/responses/Error' } }
+components:
+  securitySchemes:
+    cookieAuth: { type: apiKey, in: cookie, name: access_token }
+  parameters:
+    projectId: { in: path, name: projectId, required: true, schema: { type: string, format: uuid } }
+    prdId: { in: path, name: prdId, required: true, schema: { type: string, format: uuid } }
+  schemas:
+    RegisterRequest:
+      type: object
+      required: [email, name, password]
+      properties:
+        email: { type: string, format: email }
+        name: { type: string, maxLength: 100 }
+        password: { type: string, minLength: 10, maxLength: 72 }
+  responses:
+    Error:
+      description: Standard error envelope
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: object
+                properties:
+                  code: { type: string }
+                  message: { type: string }

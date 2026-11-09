@@ -1,0 +1,15 @@
+import * as React from "react";
+import { cn } from "@/lib/utils";
+
+export function Button({ className, variant = "primary", size = "md", ...props }: React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: "primary" | "secondary" | "ghost" | "danger"; size?: "sm" | "md" | "lg" }) {
+  const variants = { primary: "bg-[#315642] text-white hover:bg-[#244633] shadow-sm", secondary: "bg-white border border-[#dfe7df] text-[#294535] hover:bg-[#f7f8f4]", ghost: "text-[#66766b] hover:bg-[#eef2eb] hover:text-[#294535]", danger: "bg-[#b54747] text-white hover:bg-[#983939]" };
+  const sizes = { sm: "h-9 px-3 text-xs", md: "h-11 px-4 text-sm", lg: "h-12 px-5 text-sm" };
+  return <button className={cn("inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl font-semibold transition disabled:pointer-events-none disabled:opacity-50", variants[variant], sizes[size], className)} {...props} />;
+}
+export function Input({ className, ...props }: React.InputHTMLAttributes<HTMLInputElement>) { return <input className={cn("h-11 w-full rounded-xl border border-[#dfe5dc] bg-white px-3.5 text-sm text-[#26372d] outline-none transition placeholder:text-[#9aa59a] focus:border-[#62846c] focus:ring-4 focus:ring-[#315642]/10", className)} {...props} />; }
+export function Textarea({ className, ...props }: React.TextareaHTMLAttributes<HTMLTextAreaElement>) { return <textarea className={cn("min-h-28 w-full resize-y rounded-xl border border-[#dfe5dc] bg-white px-3.5 py-3 text-sm leading-6 text-[#26372d] outline-none transition placeholder:text-[#9aa59a] focus:border-[#62846c] focus:ring-4 focus:ring-[#315642]/10", className)} {...props} />; }
+export function Select({ className, ...props }: React.SelectHTMLAttributes<HTMLSelectElement>) { return <select className={cn("h-11 w-full appearance-none rounded-xl border border-[#dfe5dc] bg-white px-3.5 text-sm text-[#26372d] outline-none focus:border-[#62846c] focus:ring-4 focus:ring-[#315642]/10", className)} {...props} />; }
+export function Label({ className, ...props }: React.LabelHTMLAttributes<HTMLLabelElement>) { return <label className={cn("mb-2 block text-sm font-semibold text-[#34483a]", className)} {...props} />; }
+export function Card({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) { return <div className={cn("rounded-2xl border border-[#e4e8e0] bg-white shadow-[0_4px_20px_rgba(40,57,43,.035)]", className)} {...props} />; }
+export function Badge({ children, tone = "default" }: { children: React.ReactNode; tone?: "default" | "green" | "amber" | "gray" }) { const color = { default: "bg-[#eef2ec] text-[#49624e]", green: "bg-[#e1f0e5] text-[#2b6b42]", amber: "bg-[#fff3d7] text-[#8a6414]", gray: "bg-[#f0f1ee] text-[#707870]" }; return <span className={cn("inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold", color[tone])}>{children}</span>; }
+export function FieldError({ children }: { children?: React.ReactNode }) { return children ? <p className="mt-1.5 text-xs text-red-600">{children}</p> : null; }

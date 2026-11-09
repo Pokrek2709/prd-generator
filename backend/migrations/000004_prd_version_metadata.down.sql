@@ -1,0 +1,2 @@
+ALTER TABLE prd_versions DROP COLUMN IF EXISTS status;
+ALTER TABLE prd_versions DROP COLUMN IF EXISTS title;

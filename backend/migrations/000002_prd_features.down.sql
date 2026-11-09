@@ -1,0 +1,5 @@
+DROP TABLE IF EXISTS share_links;
+DROP TABLE IF EXISTS ai_clarification_sessions;
+ALTER TABLE ai_usage_logs DROP COLUMN IF EXISTS action;
+ALTER TABLE projects DROP COLUMN IF EXISTS status;
+ALTER TABLE users DROP COLUMN IF EXISTS plan;
